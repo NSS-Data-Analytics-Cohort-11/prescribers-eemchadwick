@@ -62,12 +62,67 @@ LIMIT 10;
  LIMIT 30;
  --answer:"INSULIN GLARGINE,HUM.REC.ANLOG"
  
- --3b. Which drug (generic_name) has the hightest total cost per day? Bonus: Round your cost per day column to 2 decimal places. Google ROUND to see how this works.
- SELECT drug.generic_name, prescription.total_30_day_fill_count --SUM(prescription.total_drug_cost), 
+ --3b. Which drug (generic_name) has the highest total cost per day? Bonus: Round your cost per day column to 2 decimal places. Google ROUND to see how this works.
+ SELECT drug.generic_name, ROUND(SUM(prescription.total_drug_cost)/SUM(prescription.total_day_supply), 2) AS cost_per_day 
  FROM drug
  INNER JOIN prescription
  ON drug.drug_name = prescription.drug_name
  GROUP BY drug.generic_name
- ORDER BY SUM(prescription.total_drug_cost) DESC
- LIMIT 30;
- --answer: 
+ ORDER BY SUM(prescription.total_drug_cost)/SUM(prescription.total_day_supply) DESC
+ LIMIT 10;
+ --answer: "C1 ESTERASE INHIBITOR"
+ 
+ --4a. For each drug in the drug table, return the drug name and then a column named 'drug_type' which says 'opioid' for drugs which have opioid_drug_flag = 'Y', says 'antibiotic' for those drugs which have antibiotic_drug_flag = 'Y', and says 'neither' for all other drugs. Hint: You may want to use a CASE expression for this.
+SELECT drug_name, 
+CASE WHEN opioid_drug_flag = 'Y' THEN 'opioid'
+WHEN antibiotic_drug_flag = 'Y' THEN 'antibiotic'
+ELSE 'neither' END AS drug_type
+FROM drug;
+--answer: run query
+
+--4b. Building off of the query you wrote for part a, determine whether more was spent (total_drug_cost) on opioids or on antibiotics. Hint: Format the total costs as MONEY for easier comparision.
+SELECT MONEY(SUM(total_drug_cost)) AS total_drug_cost,
+	CASE WHEN opioid_drug_flag = 'Y' THEN 'opioid'
+	WHEN antibiotic_drug_flag = 'Y' THEN 'antibiotic'
+	ELSE 'neither' END AS drug_type
+FROM drug
+INNER JOIN prescription
+ON drug.drug_name = prescription.drug_name
+GROUP BY drug_type
+ORDER BY total_drug_cost DESC;
+--answer: opioids
+
+--5.a. How many CBSAs are in Tennessee? Warning: The cbsa table contains information for all states, not just Tennessee.
+SELECT cbsa, cbsaname
+FROM cbsa
+WHERE cbsaname LIKE '%TN'
+GROUP BY cbsa, cbsaname;
+--answer: 6
+
+--5b. Which cbsa has the largest combined population? Which has the smallest? Report the CBSA name and total population.
+SELECT cbsa, SUM(population.population) AS combined_population
+FROM cbsa
+INNER JOIN population
+ON cbsa.fipscounty = population.fipscounty
+GROUP BY cbsa
+ORDER BY combined_population DESC
+LIMIT 20;
+--answer: largest population cbsa:"34980", population: 1830410
+
+SELECT cbsa, SUM(population.population) AS combined_population
+FROM cbsa
+INNER JOIN population
+ON cbsa.fipscounty = population.fipscounty
+GROUP BY cbsa
+ORDER BY combined_population 
+LIMIT 20;
+
+--smallest - cbsa "34100", population: 116352
+
+SELECT *
+FROM population
+LIMIT 20;
+
+SELECT *
+FROM cbsa
+LIMIT 20;
