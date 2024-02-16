@@ -105,24 +105,38 @@ FROM cbsa
 INNER JOIN population
 ON cbsa.fipscounty = population.fipscounty
 GROUP BY cbsa
-ORDER BY combined_population DESC
-LIMIT 20;
+ORDER BY combined_population DESC;
 --answer: largest population cbsa:"34980", population: 1830410
-
-SELECT cbsa, SUM(population.population) AS combined_population
-FROM cbsa
-INNER JOIN population
-ON cbsa.fipscounty = population.fipscounty
-GROUP BY cbsa
-ORDER BY combined_population 
-LIMIT 20;
-
 --smallest - cbsa "34100", population: 116352
 
-SELECT *
-FROM population
-LIMIT 20;
+--5c. What is the largest (in terms of population) county which is not included in a CBSA? Report the county name and population.
 
-SELECT *
-FROM cbsa
-LIMIT 20;
+SELECT county, population, cbsa, state
+FROM fips_county
+FULL JOIN population
+ON fips_county.fipscounty = population.fipscounty
+FULL JOIN cbsa
+ON population.fipscounty = cbsa.fipscounty
+WHERE cbsa IS NULL
+AND population IS NOT NULL
+ORDER BY population DESC;
+--answer: "SEVIER", 95523
+
+--6. a. Find all rows in the prescription table where total_claims is at least 3000. Report the drug_name and the total_claim_count.
+
+SELECT drug_name, total_claim_count
+FROM prescription
+WHERE total_claim_count >= 3000;
+--answer: run query
+
+--6b. For each instance that you found in part a, add a column that indicates whether the drug is an opioid.
+SELECT drug_name, total_claim_count, opioid_drug_flag,
+CASE WHEN opioid_drug_flag = 'Y' THEN 'opioid'
+	ELSE 'not opioid' END AS drug_type
+FROM prescription
+INNER JOIN drug
+USING (drug_name)
+WHERE total_claim_count >= 3000
+ORDER BY total_claim_count DESC;
+
+
