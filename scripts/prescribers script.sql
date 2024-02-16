@@ -130,7 +130,7 @@ WHERE total_claim_count >= 3000;
 --answer: run query
 
 --6b. For each instance that you found in part a, add a column that indicates whether the drug is an opioid.
-SELECT drug_name, total_claim_count, opioid_drug_flag,
+SELECT drug_name, total_claim_count,
 CASE WHEN opioid_drug_flag = 'Y' THEN 'opioid'
 	ELSE 'not opioid' END AS drug_type
 FROM prescription
@@ -138,5 +138,17 @@ INNER JOIN drug
 USING (drug_name)
 WHERE total_claim_count >= 3000
 ORDER BY total_claim_count DESC;
+--answer: run query
 
-
+--6c. Add another column to your answer from the previous part which gives the prescriber first and last name associated with each row.
+SELECT drug_name, total_claim_count, nppes_provider_first_name, nppes_provider_last_org_name,
+CASE WHEN opioid_drug_flag = 'Y' THEN 'opioid'
+	ELSE 'not opioid' END AS drug_type
+--CASE WHEN ??
+FROM prescription
+INNER JOIN drug
+USING (drug_name)
+INNER JOIN prescriber
+ON prescription.npi = prescriber.npi
+WHERE total_claim_count >= 3000
+ORDER BY total_claim_count DESC;
