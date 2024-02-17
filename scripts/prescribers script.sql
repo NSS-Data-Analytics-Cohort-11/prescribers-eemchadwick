@@ -49,8 +49,17 @@ LIMIT 10;
 --answer:"Nurse Practitioner"
 
 --2c. **Challenge Question:** Are there any specialties that appear in the prescriber table that have no associated prescriptions in the prescription table?
+SELECT prescriber.specialty_description, SUM(prescription.total_claim_count) AS total_claim_count
+FROM prescriber
+FULL JOIN prescription
+USING (npi)
+GROUP BY prescriber.specialty_description
+HAVING SUM(prescription.total_claim_count) IS NULL
+--answer: 15 specialties; run query
 
 --2d. **Difficult Bonus:** *Do not attempt until you have solved all other problems!* For each specialty, report the percentage of total claims by that specialty which are for opioids. Which specialties have a high percentage of opioids?
+
+
 
 --3a. Which drug (generic_name) had the highest total drug cost?
  SELECT drug.generic_name, SUM(prescription.total_drug_cost)
@@ -152,3 +161,44 @@ INNER JOIN prescriber
 ON prescription.npi = prescriber.npi
 WHERE total_claim_count >= 3000
 ORDER BY total_claim_count DESC;
+
+--7.The goal of this exercise is to generate a full list of all pain management specialists in Nashville and the number of claims they had for each opioid. Hint: The results from all 3 parts will have 637 rows.
+--7a. First, create a list of all npi/drug_name combinations for pain management specialists (specialty_description = 'Pain Management) in the city of Nashville (nppes_provider_city = 'NASHVILLE'), where the drug is an opioid (opiod_drug_flag = 'Y'). Warning: Double-check your query before running it. You will only need to use the prescriber and drug tables since you don't need the claims numbers yet.
+
+-- SELECT *
+-- FROM prescriber
+-- LIMIT 10;
+
+SELECT prescriber.npi, drug.drug_name
+FROM prescriber
+CROSS JOIN drug
+WHERE prescriber.specialty_description = 'Pain Management'
+AND nppes_provider_city = 'NASHVILLE'
+AND opioid_drug_flag = 'Y';
+--answer: run query
+
+--7b. Next, report the number of claims per drug per prescriber. Be sure to include all combinations, whether or not the prescriber had any claims. You should report the npi, the drug name, and the number of claims (total_claim_count).
+SELECT prescriber.npi, drug.drug_name, SUM(total_claim_count) AS total_claim_count
+FROM prescriber
+CROSS JOIN drug
+LEFT JOIN prescription
+ON drug.drug_name = prescription.drug_name
+WHERE prescriber.specialty_description = 'Pain Management'
+AND nppes_provider_city = 'NASHVILLE'
+AND opioid_drug_flag = 'Y'
+GROUP BY drug.drug_name, prescriber.npi
+ORDER BY npi;
+--answer: run query
+
+--7c. Finally, if you have not done so already, fill in any missing values for total_claim_count with 0. Hint - Google the COALESCE function.
+SELECT prescriber.npi, drug.drug_name, COALESCE(SUM(total_claim_count),0) AS total_claim_count
+FROM prescriber
+CROSS JOIN drug
+LEFT JOIN prescription
+ON drug.drug_name = prescription.drug_name
+WHERE prescriber.specialty_description = 'Pain Management'
+AND nppes_provider_city = 'NASHVILLE'
+AND opioid_drug_flag = 'Y'
+GROUP BY drug.drug_name, prescriber.npi
+ORDER BY npi;
+--answer: run query
