@@ -36,7 +36,7 @@ LIMIT 5;
 --answer: "Family Practice"
 
 --2b. Which specialty had the most total number of claims for opioids?
-SELECT prescriber.specialty_description, SUM(prescription.total_claim_count)
+SELECT prescriber.specialty_description, SUM(prescription.total_claim_count) AS opioid_claims
 FROM prescription
 INNER JOIN prescriber
 ON prescription.npi = prescriber.npi
@@ -58,7 +58,18 @@ HAVING SUM(prescription.total_claim_count) IS NULL
 --answer: 15 specialties; run query
 
 --2d. **Difficult Bonus:** *Do not attempt until you have solved all other problems!* For each specialty, report the percentage of total claims by that specialty which are for opioids. Which specialties have a high percentage of opioids?
-
+SELECT prescriber.specialty_description, SUM(prescription.total_claim_count) AS total_claims,
+	ROUND(100*(SUM(CASE WHEN opioid_drug_flag = 'Y' THEN 1
+	   		 WHEN opioid_drug_flag = 'N' THEN 0 END))/ SUM(prescription.total_claim_count), 2) AS opioid_pct
+FROM prescription
+INNER JOIN prescriber
+ON prescription.npi = prescriber.npi
+INNER JOIN drug
+ON prescription.drug_name = drug.drug_name
+GROUP BY prescriber.specialty_description 
+ORDER BY (SUM(CASE WHEN opioid_drug_flag = 'Y' THEN 1
+	   		 WHEN opioid_drug_flag = 'N' THEN 0 END))/ SUM(prescription.total_claim_count) DESC
+--answer: run query; surgery specialties have high % of opioids
 
 
 --3a. Which drug (generic_name) had the highest total drug cost?
@@ -150,10 +161,9 @@ ORDER BY total_claim_count DESC;
 --answer: run query
 
 --6c. Add another column to your answer from the previous part which gives the prescriber first and last name associated with each row.
-SELECT drug_name, total_claim_count, nppes_provider_first_name, nppes_provider_last_org_name,
+SELECT drug_name, total_claim_count, COALESCE(CONCAT(nppes_provider_first_name, ' ', nppes_provider_last_org_name)) AS prescriber_name,
 CASE WHEN opioid_drug_flag = 'Y' THEN 'opioid'
 	ELSE 'not opioid' END AS drug_type
---CASE WHEN ??
 FROM prescription
 INNER JOIN drug
 USING (drug_name)
@@ -161,6 +171,7 @@ INNER JOIN prescriber
 ON prescription.npi = prescriber.npi
 WHERE total_claim_count >= 3000
 ORDER BY total_claim_count DESC;
+--answer: run query
 
 --7.The goal of this exercise is to generate a full list of all pain management specialists in Nashville and the number of claims they had for each opioid. Hint: The results from all 3 parts will have 637 rows.
 --7a. First, create a list of all npi/drug_name combinations for pain management specialists (specialty_description = 'Pain Management) in the city of Nashville (nppes_provider_city = 'NASHVILLE'), where the drug is an opioid (opiod_drug_flag = 'Y'). Warning: Double-check your query before running it. You will only need to use the prescriber and drug tables since you don't need the claims numbers yet.
